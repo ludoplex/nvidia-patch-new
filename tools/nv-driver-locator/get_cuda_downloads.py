@@ -18,8 +18,7 @@ def parse_args():
     def check_positive_float(val):
         val = float(val)
         if val <= 0:
-            raise ValueError("Value %s is not valid positive float" %
-                             (repr(val),))
+            raise ValueError(f"Value {repr(val)} is not valid positive float")
         return val
 
     parser = argparse.ArgumentParser(
@@ -55,10 +54,13 @@ def get_latest_cuda_tk(*, timeout=10):
     doc = issue_request(timeout)
     soup = BeautifulSoup(doc, 'html.parser')
 
-    res = soup.find('strong', string=re.compile(r'^\s*latest\s+release\s*$', re.I)).\
-        parent.find('a', string=re.compile(r'^\s*cuda\s+toolkit\s+.*$', re.I)).\
-        string
-    return res
+    return (
+        soup.find(
+            'strong', string=re.compile(r'^\s*latest\s+release\s*$', re.I)
+        )
+        .parent.find('a', string=re.compile(r'^\s*cuda\s+toolkit\s+.*$', re.I))
+        .string
+    )
 
 
 def main():

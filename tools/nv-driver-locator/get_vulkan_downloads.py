@@ -19,8 +19,7 @@ def parse_args():
     def check_positive_float(val):
         val = float(val)
         if val <= 0:
-            raise ValueError("Value %s is not valid positive float" %
-                             (repr(val),))
+            raise ValueError(f"Value {repr(val)} is not valid positive float")
         return val
 
     parser = argparse.ArgumentParser(
@@ -63,13 +62,9 @@ def get_drivers(*, timeout=10):
         if sibling.name == 'p' and sibling.b is not None:
             m = re.match(r'(Windows|Linux)\s+((\d+\.){1,2}\d+)', sibling.b.string)
             if m is not None:
-                ver = m.group(2)
-                os = m.group(1)
-                obj = {
-                    "name": "Vulkan Beta Driver for %s" % (os,),
-                    "os": os,
-                    "version": ver,
-                }
+                ver = m[2]
+                os = m[1]
+                obj = {"name": f"Vulkan Beta Driver for {os}", "os": os, "version": ver}
                 result.append(obj)
     return result
 

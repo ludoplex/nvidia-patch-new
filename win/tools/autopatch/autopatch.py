@@ -73,8 +73,7 @@ def parse_args():
                         action="store_true",
                         help="supply patched library directly instead of "
                         "installer file")
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 class ExtractException(Exception):
@@ -101,12 +100,16 @@ class ExtractedTarget:
         self._arch_tgt = arch_tgt
 
     def __enter__(self):
-        ret = subprocess.call([self._sevenzip,
-                               "e",
-                               "-o" + self._dst_dir,
-                               self._archive,
-                               self._arch_tgt],
-                              stdout=sys.stderr)
+        ret = subprocess.call(
+            [
+                self._sevenzip,
+                "e",
+                f"-o{self._dst_dir}",
+                self._archive,
+                self._arch_tgt,
+            ],
+            stdout=sys.stderr,
+        )
         if ret != 0:
             raise ExtractException("Subprocess returned non-zero exit code.")
         name = os.path.join(self._dst_dir, os.path.basename(self._arch_tgt))
@@ -169,11 +172,11 @@ def make_patch(archive, *,
     del f
     print("Pattern found @ %016X" % (offset,), file=sys.stderr)
 
-    res = []
-    for (i, (left, right)) in enumerate(zip(search, replacement)):
-        if left != right:
-            res.append((offset + i, left, right))
-    return res
+    return [
+        (offset + i, left, right)
+        for i, (left, right) in enumerate(zip(search, replacement))
+        if left != right
+    ]
 
 
 @functools.lru_cache(maxsize=None)
@@ -202,8 +205,8 @@ def patch_flow(installer_file, search, replacement, target, target_name, patch_n
     # check if installer file exists or try to download
     if not os.path.isfile(installer_file):  #installer file does not exists, get url for download
         if not installer_file.startswith("http"):  #installer_file is a version, parse to url
-            filename = installer_file+"-desktop-win10-win11-64bit-international-dch-whql.exe"
-            installer_file = "https://international.download.nvidia.com/Windows/"+installer_file+"/"+filename
+            filename = f"{installer_file}-desktop-win10-win11-64bit-international-dch-whql.exe"
+            installer_file = f"https://international.download.nvidia.com/Windows/{installer_file}/{filename}"
         else:  # installer_file is an url
             filename = os.path.basename(installer_file)
         # download installer and save in .temp
@@ -255,8 +258,9 @@ def patch_flow(installer_file, search, replacement, target, target_name, patch_n
         elif 'win7' in installer_name:
             os_prefix = 'win7_x64'
         else:
-            raise UnknownPlatformException("Can't infer platform from filename %s"
-                                           % (repr(installer_name),))
+            raise UnknownPlatformException(
+                f"Can't infer platform from filename {repr(installer_name)}"
+            )
         driver_name = drv_prefix[product_type] + version
         out_dir = os.path.join(
             os.path.dirname(

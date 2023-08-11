@@ -31,7 +31,8 @@ def check_positive_int(value):
     value = int(value)
     if value <= 0:
         raise argparse.ArgumentTypeError(
-            "%s is an invalid positive number value" % value)
+            f"{value} is an invalid positive number value"
+        )
     return value
 
 
@@ -56,17 +57,16 @@ def parse_args():
     parser.add_argument("-l", "--limit",
                         help="stop after number of differences",
                         type=check_positive_int)
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 def feed_chunks(f, chunk_size=4096):
     """ Reads file-like object with chunks having up to `chunk_size` length """
     while True:
-        buf = f.read(chunk_size)
-        if not buf:
+        if buf := f.read(chunk_size):
+            yield buf
+        else:
             break
-        yield buf
 
 
 def zip_files_bytes(left, right):
@@ -89,15 +89,13 @@ def zip_files_bytes(left, right):
 
 
 def diff(left, right, limit=None):
-    offset = 0
     diff_count = 0
-    for a, b in zip_files_bytes(left, right):
+    for offset, (a, b) in enumerate(zip_files_bytes(left, right)):
         if a != b:
             diff_count += 1
             if limit is not None and diff_count > limit:
                 raise DiffLimitException()
             yield offset, a, b
-        offset += 1
 
 
 def compose_diff_file(orig, patched, output, header, *,

@@ -86,8 +86,7 @@ def parse_args():
     def check_positive_float(val):
         val = float(val)
         if val <= 0:
-            raise ValueError("Value %s is not valid positive float" %
-                             (repr(val),))
+            raise ValueError(f"Value {repr(val)} is not valid positive float")
         return val
 
     parser = argparse.ArgumentParser(
@@ -148,10 +147,10 @@ def main():
         print("NOT FOUND")
         sys.exit(3)
     if not args.raw:
-        print("Version: %s" % (drv['DriverAttributes']['Version'],))
-        print("Beta: %s" % (bool(int(drv['DriverAttributes']['IsBeta'])),))
-        print("WHQL: %s" % (bool(int(drv['DriverAttributes']['IsWHQL'])),))
-        print("URL: %s" % (drv['DriverAttributes']['DownloadURLAdmin'],))
+        print(f"Version: {drv['DriverAttributes']['Version']}")
+        print(f"Beta: {bool(int(drv['DriverAttributes']['IsBeta']))}")
+        print(f"WHQL: {bool(int(drv['DriverAttributes']['IsWHQL']))}")
+        print(f"URL: {drv['DriverAttributes']['DownloadURLAdmin']}")
     else:
         json.dump(drv, sys.stdout, indent=4)
         sys.stdout.flush()

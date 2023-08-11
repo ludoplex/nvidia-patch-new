@@ -62,7 +62,7 @@ def windows_driver_rows(drivers, repo_base):
             product = PRODUCT_LABELS[Product[d['product']]]
             variant = d.get('variant')
             version_variant = d['version']
-            version_variant += (" " + variant) if variant else ''
+            version_variant += f" {variant}" if variant else ''
             patch64_url = repo_base + d.get('patch64_url')
             patch32_url = repo_base + d.get('patch32_url')
             driver_url = d.get('driver_url')
@@ -77,6 +77,7 @@ def windows_driver_rows(drivers, repo_base):
                                              patch64_link=patch64_link,
                                              patch32_link=patch32_link,
                                              driver_link=driver_link)
+
     return "\n".join(row_gen())
 
 def windows_product_sections(drivers, repo_base):
@@ -118,8 +119,7 @@ def parse_args():
     parser.add_argument("-R", "--repo-root",
                         help="repository web root URL",
                         default=REPO_BASE)
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 def main():
     args = parse_args()

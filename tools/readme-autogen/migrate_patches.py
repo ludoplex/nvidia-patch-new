@@ -47,13 +47,13 @@ def validate_patch(patch64, patch32):
     p64_filepath = os.path.join(wc_base, *p64_comp)
     p32_filepath = os.path.join(wc_base, *p32_comp)
     if not os.path.exists(p64_filepath):
-        raise Exception("File %s not found!" % p64_filepath)
+        raise Exception(f"File {p64_filepath} not found!")
     if not os.path.exists(p32_filepath):
-        raise Exception("File %s not found!" % p32_filepath)
+        raise Exception(f"File {p32_filepath} not found!")
     if os.path.getsize(p64_filepath) == 0:
-        raise Exception("File %s empty!" % p64_filepath)
+        raise Exception(f"File {p64_filepath} empty!")
     if os.path.exists(p32_filepath) == 0:
-        raise Exception("File %s empty!" % p32_filepath)
+        raise Exception(f"File {p32_filepath} empty!")
 
 def main():
     with open(DATAFILE_PATH) as data_file:
