@@ -60,15 +60,13 @@ def parse_args():
     def check_positive_float(val):
         val = float(val)
         if val <= 0:
-            raise ValueError("Value %s is not valid positive float" %
-                             (repr(val),))
+            raise ValueError(f"Value {repr(val)} is not valid positive float")
         return val
 
     def check_port(val):
         val = int(val)
         if not (0 < val <= 0xFFFF):
-            raise ValueError("Value %s is not valid port number" %
-                             (repr(val),))
+            raise ValueError(f"Value {repr(val)} is not valid port number")
         return val
 
     parser = argparse.ArgumentParser(

@@ -40,7 +40,7 @@ class FileDB(BaseDB):
                 assert tf.read() == TEST_STRING, "Test write failed"
 
     def _get_key_filename(self, key):
-        return self._ospath.join(self._wd, key + '.json')
+        return self._ospath.join(self._wd, f'{key}.json')
 
     def check_key(self, key):
         filename = self._get_key_filename(key)
@@ -117,8 +117,7 @@ class EmailNotifier(BaseNotifier):
         msg['To'] = ', '.join(self._to_addrs)
         obj_text = json.dumps(obj, indent=4, ensure_ascii=False)
         msg_text = json.dumps(obj, indent=4, ensure_ascii=True)
-        body = "See attached JSON or message body below:\n"
-        body += msg_text
+        body = "See attached JSON or message body below:\n" + msg_text
         msg.attach(self._MIMEText(body, 'plain', 'utf-8'))
         p = self._MIMEBase('application', 'octet-stream')
         p.set_payload(obj_text.encode('ascii'))
@@ -267,20 +266,20 @@ class CudaToolkitDownloadsChannel(BaseChannel):
         self._timeout = timeout
 
     def get_latest_drivers(self):
-        latest = self._gcd.get_latest_cuda_tk(timeout=self._timeout)
-        if not latest:
-            return
-        yield {
-            'DriverAttributes': {
-                'Version': '???',
-                'Name': latest,
-                'NameLocalized': latest,
-            },
-            'ChannelAttributes': {
-                'Name': self.name,
-                'Type': self.__class__.__name__,
+        if latest := self._gcd.get_latest_cuda_tk(timeout=self._timeout):
+            yield {
+                'DriverAttributes': {
+                    'Version': '???',
+                    'Name': latest,
+                    'NameLocalized': latest,
+                },
+                'ChannelAttributes': {
+                    'Name': self.name,
+                    'Type': self.__class__.__name__,
+                }
             }
-        }
+        else:
+            return
 
 class VulkanBetaDownloadsChannel(BaseChannel):
     def __init__(self, name, *,
@@ -350,8 +349,7 @@ def parse_args():
     parser.add_argument("-c", "--config",
                         default="/etc/nv-driver-locator.json",
                         help="config file location")
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 class DriverLocator:
@@ -365,6 +363,7 @@ class DriverLocator:
         self._notifiers = self._construct_notifiers(conf['notifiers'])
 
     def _construct_channels(self, channels_config):
+        channels = []
         channel_types = {
             'gfe_client': GFEClientChannel,
             'nvidia_downloads': NvidiaDownloadsChannel,
@@ -372,15 +371,14 @@ class DriverLocator:
             'vulkan_beta': VulkanBetaDownloadsChannel,
             'deb_packages': DebRepoChannel,
         }
-
-        channels = []
         for ch in channels_config:
             try:
                 ctor = channel_types[ch['type']]
                 C = ctor(ch['name'], **ch['params'])
             except Exception as e:
-                self._perror("Channel construction failed with exception: %s. "
-                             "Skipping..." % (str(e),))
+                self._perror(
+                    f"Channel construction failed with exception: {str(e)}. Skipping..."
+                )
             else:
                 channels.append(C)
         return channels
@@ -390,23 +388,22 @@ class DriverLocator:
             'file': FileDB,
         }
         ctor = db_types[db_config['type']]
-        db = ctor(**db_config['params'])
-        return db
+        return ctor(**db_config['params'])
 
     def _construct_notifiers(self, notifiers_config):
+        notifiers = []
         notifier_types = {
             'email': EmailNotifier,
             'command': CommandNotifier,
         }
-
-        notifiers = []
         for nc in notifiers_config:
             try:
                 ctor = notifier_types[nc['type']]
                 N = ctor(nc['name'], **nc['params'])
             except Exception as e:
-                self._perror("Notifier construction failed with exception: %s."
-                             " Skipping..." % (str(e),))
+                self._perror(
+                    f"Notifier construction failed with exception: {str(e)}. Skipping..."
+                )
             else:
                 notifiers.append(N)
         return notifiers
@@ -421,22 +418,21 @@ class DriverLocator:
             try:
                 n.notify(obj)
             except Exception as e:
-                self._perror("Notify channel %s failed with exception: %s." %
-                             (n.name, str(e)))
+                self._perror(f"Notify channel {n.name} failed with exception: {str(e)}.")
                 fails += 1
         return fails < len(self._notifiers)
 
     def run(self):
         for ch in self._channels:
-            counter = 0
             try:
                 drivers = ch.get_latest_drivers()
             except Exception as e:
-                self._perror("get_latest_drivers() invocation failed for "
-                             "channel %s. Exception: %s. Continuing..." %
-                             (repr(ch.name), str(e)))
+                self._perror(
+                    f"get_latest_drivers() invocation failed for channel {repr(ch.name)}. Exception: {str(e)}. Continuing..."
+                )
                 continue
 
+            counter = 0
             try:
                 # Fetch
                 for drv in drivers:
@@ -445,8 +441,9 @@ class DriverLocator:
                     try:
                         key = self._hasher.hash_object(drv)
                     except Exception as e:
-                        self._perror("Key evaluation failed for channel %s. "
-                                     "Exception: %s" % (repr(name), str(e)))
+                        self._perror(
+                            f"Key evaluation failed for channel {repr(name)}. Exception: {str(e)}"
+                        )
                         continue
 
                     # Notify
@@ -454,13 +451,13 @@ class DriverLocator:
                         if self._notify_all(drv):
                             self._db.set_key(key, drv)
             except Exception as e:
-                self._perror("channel %s enumeration terminated with exception: %s" %
-                             (repr(name), str(e)))
+                self._perror(
+                    f"channel {repr(name)} enumeration terminated with exception: {str(e)}"
+                )
                 continue
 
             if not counter:
-                self._perror("Drivers not found for channel %s" %
-                             (repr(ch.name),))
+                self._perror(f"Drivers not found for channel {repr(ch.name)}")
         return self._ret_code
 
 

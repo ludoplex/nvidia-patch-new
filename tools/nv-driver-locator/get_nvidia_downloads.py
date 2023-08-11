@@ -107,8 +107,7 @@ def parse_args():
     def check_positive_float(val):
         val = float(val)
         if val <= 0:
-            raise ValueError("Value %s is not valid positive float" %
-                             (repr(val),))
+            raise ValueError(f"Value {repr(val)} is not valid positive float")
         return val
 
     parser = argparse.ArgumentParser(
@@ -161,7 +160,7 @@ def fetch_url(url, timeout=10):
 
 def issue_request(query_obj, timeout=10):
     ENDPOINT = 'https://www.nvidia.com/Download/processFind.aspx'
-    url = ENDPOINT + '?' + urllib.parse.urlencode(query_obj)
+    url = f'{ENDPOINT}?{urllib.parse.urlencode(query_obj)}'
     return fetch_url(url, timeout)
 
 
@@ -170,7 +169,7 @@ def parse_download_page(url):
         body = fetch_url(url)
         soup = BeautifulSoup(body, 'html.parser')
     except Exception as exc:
-        print('parse_download_page error: %s' % (str(exc),), file=sys.stderr)
+        print(f'parse_download_page error: {str(exc)}', file=sys.stderr)
         return None
     download_div = soup.find('div', id='dnldBttns')
     if download_div is None:
@@ -191,7 +190,7 @@ def parse_product_page(url):
         body = fetch_url(url)
         soup = BeautifulSoup(body, 'html.parser')
     except Exception as exc:
-        print('parse_product_page error: %s' % (str(exc),), file=sys.stderr)
+        print(f'parse_product_page error: {str(exc)}', file=sys.stderr)
         return None
     download_anchor = soup.find('a', attrs={'href': True}, id='lnkDwnldBtn')
     if download_anchor is None:
@@ -249,7 +248,7 @@ def get_drivers(*,
 
     labeled_rows = [dict(zip(label_tuple, tr('td'))) for tr in driverlistrows]
     latest_driver_row = max(labeled_rows, key=parse_version)
-    obj = dict((k, parse_content_td(v)) for k, v in latest_driver_row.items())
+    obj = {k: parse_content_td(v) for k, v in latest_driver_row.items()}
     product_td = latest_driver_row['name']
     product_anchor = product_td.find('a', attrs={"href": True})
     if product_anchor is not None:
